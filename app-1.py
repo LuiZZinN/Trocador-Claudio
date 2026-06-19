@@ -629,53 +629,52 @@ col_form, col_res = st.columns([1, 2.5], gap="large")
 with col_form:
     with st.container(border=True):
         st.markdown("### ⚙️ Parâmetros de Projeto")
-        with st.form("simulation_form"):
-            id_i = st.selectbox("Fluido Interno (Tubos)", options=[f["id"] for f in Fluidos], format_func=lambda x: next(f["nome"] for f in Fluidos if f["id"] == x), index=3)
-            id_e = st.selectbox("Fluido Externo (Casco)", options=[f["id"] for f in Fluidos], format_func=lambda x: next(f["nome"] for f in Fluidos if f["id"] == x), index=3)
+        id_i = st.selectbox("Fluido Interno (Tubos)", options=[f["id"] for f in Fluidos], format_func=lambda x: next(f["nome"] for f in Fluidos if f["id"] == x), index=3)
+        id_e = st.selectbox("Fluido Externo (Casco)", options=[f["id"] for f in Fluidos], format_func=lambda x: next(f["nome"] for f in Fluidos if f["id"] == x), index=3)
+        
+        col1_a, col1_b = st.columns(2)
+        mdot_i_kgh = col1_a.number_input("Vazão Tubos (kg/h)", value=50000.0)
+        mdot_e_kgh = col1_b.number_input("Vazão Casco (kg/h)", value=60000.0)
+        
+        col1_c, col1_d = st.columns(2)
+        Ti_in = col1_c.number_input("T. Ent Tubo (°C)", value=80.0)
+        Ti_out = col1_d.number_input("T. Sai Tubo (°C)", value=40.0)
+        
+        Te_in = st.number_input("T. Ent Casco (°C)", value=25.0)
+        
+        st.divider()
+        id_mat = st.selectbox("Material do Tubo", options=[m["id"] for m in Materiais], format_func=lambda x: next(m["nome"] for m in Materiais if m["id"] == x), index=0)
+        
+        col1_e, col1_f = st.columns(2)
+        D_tubo_mm = col1_e.number_input("Diâmetro Int (mm)", value=19.05, step=0.01)
+        espessura_mm = col1_f.number_input("Espessura (mm)", value=2.11, step=0.01)
+        
+        col1_g, col1_h = st.columns(2)
+        L_tubo = col1_g.number_input("Comprimento (m)", value=6.0, step=0.1)
+        arranjo = col1_h.selectbox("Arranjo", options=[1, 2], format_func=lambda x: "Triangular (1)" if x == 1 else "Quadrado (2)")
+        
+        st.divider()
+        usaBellDelaware = st.checkbox("Usar Método Bell-Delaware", value=False)
+        
+        # Use smaller text for Bell-Delaware to ensure labels fit
+        if usaBellDelaware:
+            st.markdown("<span style='font-size:0.8rem; font-weight:600; color:#64748b;'>Fatores Bell-Delaware:</span>", unsafe_allow_html=True)
+            b_cols = st.columns(5)
+            Jc = b_cols[0].number_input("Jc (Def.)", value=0.85, step=0.01, format="%.2f")
+            Jl = b_cols[1].number_input("Jl (Vaz.)", value=0.80, step=0.01, format="%.2f")
+            Jb = b_cols[2].number_input("Jb (Byp.)", value=0.80, step=0.01, format="%.2f")
+            Js = b_cols[3].number_input("Js (Esp.)", value=0.90, step=0.01, format="%.2f")
+            Jr = b_cols[4].number_input("Jr (Grd.)", value=0.95, step=0.01, format="%.2f")
+        else:
+            Jc = 0.85; Jl = 0.80; Jb = 0.80; Js = 0.90; Jr = 0.95
             
-            col1_a, col1_b = st.columns(2)
-            mdot_i_kgh = col1_a.number_input("Vazão Tubos (kg/h)", value=50000.0)
-            mdot_e_kgh = col1_b.number_input("Vazão Casco (kg/h)", value=60000.0)
-            
-            col1_c, col1_d = st.columns(2)
-            Ti_in = col1_c.number_input("T. Ent Tubo (°C)", value=80.0)
-            Ti_out = col1_d.number_input("T. Sai Tubo (°C)", value=40.0)
-            
-            Te_in = st.number_input("T. Ent Casco (°C)", value=25.0)
-            
-            st.divider()
-            id_mat = st.selectbox("Material do Tubo", options=[m["id"] for m in Materiais], format_func=lambda x: next(m["nome"] for m in Materiais if m["id"] == x), index=0)
-            
-            col1_e, col1_f = st.columns(2)
-            D_tubo_mm = col1_e.number_input("Diâmetro Int (mm)", value=19.05, step=0.01)
-            espessura_mm = col1_f.number_input("Espessura (mm)", value=2.11, step=0.01)
-            
-            col1_g, col1_h = st.columns(2)
-            L_tubo = col1_g.number_input("Comprimento (m)", value=6.0, step=0.1)
-            arranjo = col1_h.selectbox("Arranjo", options=[1, 2], format_func=lambda x: "Triangular (1)" if x == 1 else "Quadrado (2)")
-            
-            st.divider()
-            usaBellDelaware = st.checkbox("Usar Método Bell-Delaware", value=False)
-            
-            # Use smaller text for Bell-Delaware to ensure labels fit
-            if usaBellDelaware:
-                st.markdown("<span style='font-size:0.8rem; font-weight:600; color:#64748b;'>Fatores Bell-Delaware:</span>", unsafe_allow_html=True)
-                b_cols = st.columns(5)
-                Jc = b_cols[0].number_input("Jc (Def.)", value=0.85, step=0.01, format="%.2f")
-                Jl = b_cols[1].number_input("Jl (Vaz.)", value=0.80, step=0.01, format="%.2f")
-                Jb = b_cols[2].number_input("Jb (Byp.)", value=0.80, step=0.01, format="%.2f")
-                Js = b_cols[3].number_input("Js (Esp.)", value=0.90, step=0.01, format="%.2f")
-                Jr = b_cols[4].number_input("Jr (Grd.)", value=0.95, step=0.01, format="%.2f")
-            else:
-                Jc = 0.85; Jl = 0.80; Jb = 0.80; Js = 0.90; Jr = 0.95
-                
-            st.divider()
-            st.markdown("<span style='font-size:0.8rem; font-weight:600; color:#64748b; text-transform:uppercase;'>LIMITES PARA ANÁLISE DE FOULING</span>", unsafe_allow_html=True)
-            col_f1, col_f2 = st.columns(2)
-            T_saida_min_tubo = col_f1.number_input("T. Limite Tubo (°C)", value=40.0, step=0.1)
-            T_saida_limite_casco = col_f2.number_input("T. Limite Casco (°C)", value=35.0, step=0.1)
+        st.divider()
+        st.markdown("<span style='font-size:0.8rem; font-weight:600; color:#64748b; text-transform:uppercase;'>LIMITES PARA ANÁLISE DE FOULING</span>", unsafe_allow_html=True)
+        col_f1, col_f2 = st.columns(2)
+        T_saida_min_tubo = col_f1.number_input("T. Limite Tubo (°C)", value=40.0, step=0.1)
+        T_saida_limite_casco = col_f2.number_input("T. Limite Casco (°C)", value=35.0, step=0.1)
 
-            submitted = st.form_submit_button("Simular", type="primary", use_container_width=True)
+        submitted = st.button("Simular", type="primary", use_container_width=True)
 
 if "simulated" not in st.session_state:
     st.session_state.simulated = False
