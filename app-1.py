@@ -316,7 +316,7 @@ def runSimulation(params, chosenPasses=None):
     if Nt_min < 1: Nt_min = 1
 
     def simulaConfig(p_passes, p_F, p_config):
-        nonlocal Nt_min, mdot_i, mdot_e, Qt, DTlm, D_o, L_tubo, fluide_i, fluido_e, Ti_in, Ti_out, Te_in, Te_out
+        nonlocal Nt_min, mdot_i, mdot_e, Qt, DTlm, D_o, L_tubo, fluido_i, fluido_e, Ti_in, Ti_out, Te_in, Te_out
         D_casco_min = calcula_Ds_selba(Nt_min, Pt, arranjo, p_passes)
         h_e_min = calcula_h_casco_Kern(D_casco_min, D_o, mdot_e, fluido_e, arranjo) * J_total
 
