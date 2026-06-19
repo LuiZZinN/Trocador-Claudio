@@ -583,60 +583,96 @@ def runSimulation(params, chosenPasses=None):
 
 # ----------------- STREAMLIT UI -----------------
 
-st.title("Simulador de Trocador de Calor")
-st.markdown("Casco-tubos - Otimização Térmica e Hidráulica")
+st.markdown("""
+<style>
+    .reportview-container .main .block-container {
+        padding-top: 2rem;
+    }
+    .header-banner {
+        background-color: #2563eb;
+        color: white;
+        padding: 1.5rem;
+        border-radius: 0.75rem;
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    .header-title {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+    .header-subtitle {
+        margin: 0;
+        color: #bfdbfe;
+        font-size: 1rem;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<div class="header-banner">
+    <div style="font-size: 2rem;">🧫</div>
+    <div>
+        <h1 class="header-title">Simulador de Trocador de Calor</h1>
+        <p class="header-subtitle">Casco-tubos - Otimização Térmica e Hidráulica</p>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 if "chosen_passes" not in st.session_state:
     st.session_state.chosen_passes = None
 
-col1, col2 = st.columns([1, 2])
+col_form, col_res = st.columns([1, 2.5], gap="large")
 
-with col1:
-    st.header("Parâmetros de Projeto")
-    with st.form("simulation_form"):
-        id_i = st.selectbox("Fluido Interno (Tubos)", options=[f["id"] for f in Fluidos], format_func=lambda x: next(f["nome"] for f in Fluidos if f["id"] == x), index=3)
-        id_e = st.selectbox("Fluido Externo (Casco)", options=[f["id"] for f in Fluidos], format_func=lambda x: next(f["nome"] for f in Fluidos if f["id"] == x), index=3)
-        
-        col1_a, col1_b = st.columns(2)
-        mdot_i_kgh = col1_a.number_input("Vazão Tubos (kg/h)", value=50000.0)
-        mdot_e_kgh = col1_b.number_input("Vazão Casco (kg/h)", value=60000.0)
-        
-        col1_c, col1_d = st.columns(2)
-        Ti_in = col1_c.number_input("T. Ent Tubo (°C)", value=80.0)
-        Ti_out = col1_d.number_input("T. Sai Tubo (°C)", value=40.0)
-        
-        Te_in = st.number_input("T. Ent Casco (°C)", value=25.0)
-        
-        st.divider()
-        id_mat = st.selectbox("Material do Tubo", options=[m["id"] for m in Materiais], format_func=lambda x: next(m["nome"] for m in Materiais if m["id"] == x), index=0)
-        
-        col1_e, col1_f = st.columns(2)
-        D_tubo_mm = col1_e.number_input("Diâmetro Int (mm)", value=19.05, step=0.01)
-        espessura_mm = col1_f.number_input("Espessura (mm)", value=2.11, step=0.01)
-        
-        col1_g, col1_h = st.columns(2)
-        L_tubo = col1_g.number_input("Comprimento (m)", value=6.0, step=0.1)
-        arranjo = col1_h.selectbox("Arranjo", options=[1, 2], format_func=lambda x: "Triangular (1)" if x == 1 else "Quadrado (2)")
-        
-        st.divider()
-        usaBellDelaware = st.checkbox("Usar Método Bell-Delaware", value=False)
-        if usaBellDelaware:
-            b_cols = st.columns(5)
-            Jc = b_cols[0].number_input("Jc", value=0.85, step=0.01)
-            Jl = b_cols[1].number_input("Jl", value=0.80, step=0.01)
-            Jb = b_cols[2].number_input("Jb", value=0.80, step=0.01)
-            Js = b_cols[3].number_input("Js", value=0.90, step=0.01)
-            Jr = b_cols[4].number_input("Jr", value=0.95, step=0.01)
-        else:
-            Jc = 0.85; Jl = 0.80; Jb = 0.80; Js = 0.90; Jr = 0.95
+with col_form:
+    with st.container(border=True):
+        st.markdown("### ⚙️ Parâmetros de Projeto")
+        with st.form("simulation_form"):
+            id_i = st.selectbox("Fluido Interno (Tubos)", options=[f["id"] for f in Fluidos], format_func=lambda x: next(f["nome"] for f in Fluidos if f["id"] == x), index=3)
+            id_e = st.selectbox("Fluido Externo (Casco)", options=[f["id"] for f in Fluidos], format_func=lambda x: next(f["nome"] for f in Fluidos if f["id"] == x), index=3)
             
-        st.divider()
-        st.markdown("**Limites para Análise de Fouling**")
-        col_f1, col_f2 = st.columns(2)
-        T_saida_min_tubo = col_f1.number_input("T. Limite Tubo (°C)", value=40.0, step=0.1)
-        T_saida_limite_casco = col_f2.number_input("T. Limite Casco (°C)", value=35.0, step=0.1)
+            col1_a, col1_b = st.columns(2)
+            mdot_i_kgh = col1_a.number_input("Vazão Tubos (kg/h)", value=50000.0)
+            mdot_e_kgh = col1_b.number_input("Vazão Casco (kg/h)", value=60000.0)
+            
+            col1_c, col1_d = st.columns(2)
+            Ti_in = col1_c.number_input("T. Ent Tubo (°C)", value=80.0)
+            Ti_out = col1_d.number_input("T. Sai Tubo (°C)", value=40.0)
+            
+            Te_in = st.number_input("T. Ent Casco (°C)", value=25.0)
+            
+            st.divider()
+            id_mat = st.selectbox("Material do Tubo", options=[m["id"] for m in Materiais], format_func=lambda x: next(m["nome"] for m in Materiais if m["id"] == x), index=0)
+            
+            col1_e, col1_f = st.columns(2)
+            D_tubo_mm = col1_e.number_input("Diâmetro Int (mm)", value=19.05, step=0.01)
+            espessura_mm = col1_f.number_input("Espessura (mm)", value=2.11, step=0.01)
+            
+            col1_g, col1_h = st.columns(2)
+            L_tubo = col1_g.number_input("Comprimento (m)", value=6.0, step=0.1)
+            arranjo = col1_h.selectbox("Arranjo", options=[1, 2], format_func=lambda x: "Triangular (1)" if x == 1 else "Quadrado (2)")
+            
+            st.divider()
+            usaBellDelaware = st.checkbox("Usar Método Bell-Delaware", value=False)
+            if usaBellDelaware:
+                b_cols = st.columns(5)
+                Jc = b_cols[0].number_input("Jc", value=0.85, step=0.01)
+                Jl = b_cols[1].number_input("Jl", value=0.80, step=0.01)
+                Jb = b_cols[2].number_input("Jb", value=0.80, step=0.01)
+                Js = b_cols[3].number_input("Js", value=0.90, step=0.01)
+                Jr = b_cols[4].number_input("Jr", value=0.95, step=0.01)
+            else:
+                Jc = 0.85; Jl = 0.80; Jb = 0.80; Js = 0.90; Jr = 0.95
+                
+            st.divider()
+            st.markdown("<span style='font-size:0.8rem; font-weight:600; color:#64748b; text-transform:uppercase;'>LIMITES PARA ANÁLISE DE FOULING</span>", unsafe_allow_html=True)
+            col_f1, col_f2 = st.columns(2)
+            T_saida_min_tubo = col_f1.number_input("T. Limite Tubo (°C)", value=40.0, step=0.1)
+            T_saida_limite_casco = col_f2.number_input("T. Limite Casco (°C)", value=35.0, step=0.1)
 
-        submitted = st.form_submit_button("Simular", type="primary")
+            submitted = st.form_submit_button("Simular", type="primary", use_container_width=True)
 
 if submitted:
     st.session_state.chosen_passes = None
@@ -651,84 +687,197 @@ params = {
 
 if submitted or st.session_state.chosen_passes is not None:
     result = runSimulation(params, st.session_state.chosen_passes)
-    with col2:
-        st.header("Resultados")
+    with col_res:
         
-        r1, r2 = st.columns(2)
-        with r1:
-            st.subheader("Balanço Térmico")
-            st.write(f"**Calor Trocado (Q):** {(result['termico']['Q'] / 1000):.2f} kW")
-            st.write(f"**Temp. saída Casco calc.:** {result['termico']['Te_out']:.2f} °C")
-            st.write(f"**LMTD:** {result['termico']['LMTD']:.2f} °C")
-            st.write(f"**Configuração:** {result['termico']['configuracao']}")
-            st.write(f"**Fator de Correção (F):** {result['termico']['F']:.3f}")
-        
-        with r2:
-            st.subheader("Dimensões Finais")
-            st.write(f"**Nº de Tubos (Nt):** {result['it_geo']['Nt']}")
-            st.write(f"**Diâmetro Casco (Ds):** {(result['it_geo']['D_casco'] * 1000):.1f} mm")
-            st.write(f"**Área de Troca (A):** {result['it_geo']['A_real']:.2f} m²")
-            st.write(f"**Coef. Global (U):** {result['it_geo']['U_real']:.1f} W/m².K")
+        c1, c2 = st.columns(2)
+        with c1:
+            with st.container(border=True):
+                st.markdown("#### 💧 Balanço Térmico")
+                st.markdown(f"**Calor Trocado (Q):** <span style='float:right;'>{(result['termico']['Q'] / 1000):.2f} kW</span><br/>"
+                            f"**Temp. saída Casco calc.:** <span style='float:right;'>{result['termico']['Te_out']:.2f} °C</span><br/>"
+                            f"**LMTD:** <span style='float:right;'>{result['termico']['LMTD']:.2f} °C</span><br/>"
+                            f"**Configuração:** <span style='float:right;'>{result['termico']['configuracao']}</span><br/>"
+                            f"**Fator de Correção (F):** <span style='float:right;'>{result['termico']['F']:.3f}</span>", unsafe_allow_html=True)
+        with c2:
+            with st.container(border=True):
+                st.markdown("#### ⚙️ Dimensões Finais (Iteradas)")
+                st.markdown(f"**Nº de Tubos (Nt):** <span style='float:right;'>{result['it_geo']['Nt']}</span><br/>"
+                            f"**Diâmetro Casco (Ds):** <span style='float:right;'>{(result['it_geo']['D_casco'] * 1000):.1f} mm</span><br/>"
+                            f"**Área de Troca (A):** <span style='float:right;'>{result['it_geo']['A_real']:.2f} m²</span><br/>"
+                            f"**Coef. Global (U):** <span style='float:right;'>{result['it_geo']['U_real']:.1f} W/m².K</span>", unsafe_allow_html=True)
 
-        st.divider()
-        st.subheader("Estudo de Alternativas")
-        
-        for alt in result['alternativas']:
-            is_active = alt['n_passes'] == result['termico']['n_passes']
-            col_a, col_b, col_c = st.columns([3, 1, 1])
-            with col_a:
-                st.write(f"**{alt['config']}** | Tubos: {alt['Nt']} | Ds: {alt['D_casco']*1000:.1f}mm | Score: {alt['score']}")
-            with col_b:
-                if is_active:
-                    st.success("Ativo")
-                else:
-                    if st.button("Selecionar", key=f"sel_{alt['n_passes']}"):
-                        st.session_state.chosen_passes = alt['n_passes']
-                        st.rerun()
-
-        st.divider()
-        st.subheader("Avaliação Hidrodinâmica")
-        h1, h2 = st.columns(2)
-        with h1:
-            st.write("**Lado Tubos**")
-            st.write(f"Velocidade: {result['it_geo']['v_tubo_real']:.2f} m/s")
-            st.write(f"Perda de Carga: {result['hidraulico']['DeltaP_tubo']/1000:.2f} kPa")
-        with h2:
-            st.write("**Lado Casco**")
-            st.write(f"Velocidade: {result['it_geo']['v_casco_real']:.2f} m/s")
-            st.write(f"Perda de Carga: {result['hidraulico']['DeltaP_casco']/1000:.2f} kPa")
+        with st.container(border=True):
+            st.markdown(f"#### ⚙️ Estudo de Alternativas (Número de Passos)")
+            st.markdown("<span style='font-size:0.85rem; color:#64748b;'>Simulação comparativa para configurações geométricas alternativas variando o passes no tubo.</span>", unsafe_allow_html=True)
             
-        if result['status']['aceitavel']:
-            st.success(f"Score: {result['status']['score']} - Aceitável")
-        else:
-            st.error(f"Score: {result['status']['score']} - Requer atenção")
+            # Table Header
+            hc1, hc2, hc3, hc4, hc5, hc6, hc7, hc8, hc9 = st.columns([1.5, 0.5, 0.5, 1, 0.5, 1, 1, 0.5, 1])
+            hc1.markdown("**Configuração**")
+            hc2.markdown("**Nº Passos**")
+            hc3.markdown("**Nº Tubos (Nt)**")
+            hc4.markdown("**Diâmetro Casco (Ds)**")
+            hc5.markdown("**Fator F**")
+            hc6.markdown("**Vel. Tubo / Casco**")
+            hc7.markdown("**Perda Carga (ΔP) Tubo/Casco**")
+            hc8.markdown("**Score**")
+            hc9.markdown("**Seleção**")
+            st.divider()
             
-        for v in result['status']['validations']:
-            if v['passou']:
-                st.write(f"✅ {v['nome']}: {v['valor']}")
-            else:
-                st.write(f"❌ {v['nome']}: {v['valor']}")
-
-        st.divider()
-        st.subheader("Análise de Fouling")
-        f1, f2 = st.columns(2)
-        
-        def render_fouling(title, data):
-            st.write(f"**{title}**")
-            if not data:
-                st.write("Sem limite")
-            else:
-                st.write(f"U Limpo: {data['U_limpo']:.1f}")
-                if data['U_sujo'] > 0 and not math.isinf(data['U_sujo']):
-                    st.write(f"U Sujo Crítico: {data['U_sujo']:.1f}")
-                st.write(f"Rf Crítico: {data['R_f_critico']:.2e}" if data['R_f_critico'] > 0 else "S/ Limite")
-                st.write(f"Taxa Depos: {data['taxa']:.2e}")
-                st.write(f"Campanha: {data['tempo_campanha_meses']:.1f} meses")
+            for alt in result['alternativas']:
+                is_active = alt['n_passes'] == result['termico']['n_passes']
+                rc1, rc2, rc3, rc4, rc5, rc6, rc7, rc8, rc9 = st.columns([1.5, 0.5, 0.5, 1, 0.5, 1, 1, 0.5, 1])
                 
-        with f1:
-            render_fouling("Lado Tubo", result['fouling']['tubo'])
-        with f2:
-            render_fouling("Lado Casco", result['fouling']['casco'])
+                with rc1:
+                    st.write(alt['config'])
+                    if is_active:
+                        st.markdown("<span style='background-color:#1d4ed8; color:white; padding:2px 6px; border-radius:4px; font-size:10px;'>Active</span>", unsafe_allow_html=True)
+                rc2.write(str(alt['n_passes']))
+                rc3.write(str(alt['Nt']))
+                rc4.write(f"{alt['D_casco']*1000:.1f} mm")
+                rc5.write(f"{alt['F']:.3f}")
+                
+                with rc6:
+                    st.markdown(f"<span style='color:#ef4444;font-size:0.85rem;'>Tubo: {alt['v_tubo']:.2f} m/s</span><br/><span style='color:#10b981;font-size:0.85rem;'>Casco: {alt['v_casco']:.2f} m/s</span>", unsafe_allow_html=True)
+                
+                with rc7:
+                    st.markdown(f"<span style='font-size:0.85rem;'>Tubo: {alt['DeltaP_tubo']/1000:.2f} kPa</span><br/><span style='font-size:0.85rem;'>Casco: {alt['DeltaP_casco']/1000:.2f} kPa</span>", unsafe_allow_html=True)
+                
+                with rc8:
+                    bg_color = "#10b981" if alt['score'] >= 3 else "#f59e0b"
+                    st.markdown(f"<div style='background-color:{bg_color}; color:white; padding:4px 8px; border-radius:4px; text-align:center; font-weight:bold;'>{alt['score']}<br/><span style='font-size:10px;'>pts</span></div>", unsafe_allow_html=True)
+                
+                with rc9:
+                    if is_active:
+                        st.markdown("<button disabled style='background-color:#ecfdf5; color:#10b981; border:1px solid #10b981; border-radius:4px; padding:4px 12px; width:100%;'>✓ ATIVO</button>", unsafe_allow_html=True)
+                    else:
+                        if st.button("Selecionar", key=f"sel_{alt['n_passes']}_{alt['config']}", use_container_width=True):
+                            st.session_state.chosen_passes = alt['n_passes']
+                            st.rerun()
+                st.divider()
+        
+        with st.container(border=True):
+            st.markdown("#### 📈 Avaliação Hidrodinâmica")
+            
+            hc1, hc2 = st.columns(2)
+            with hc1:
+                st.markdown("<span style='font-size:0.8rem; font-weight:600; color:#64748b; text-transform:uppercase;'>LADO TUBOS</span>", unsafe_allow_html=True)
+                st.markdown(f"**Velocidade Real Block:** <span style='float:right;'>{result['it_geo']['v_tubo_real']:.2f} m/s</span><br/>"
+                            f"**Regime de Escoamento (Re):** <span style='float:right;'>{round(result['hidraulico']['Re_t'])}</span><br/>"
+                            f"**Perda de Carga Real:** <span style='float:right;'>{result['hidraulico']['DeltaP_tubo']/1000:.2f} kPa</span><br/>"
+                            f"**Potência de Bombeamento:** <span style='float:right;'>{result['hidraulico']['P_tubo']:.1f} W</span>", unsafe_allow_html=True)
+            with hc2:
+                st.markdown("<span style='font-size:0.8rem; font-weight:600; color:#64748b; text-transform:uppercase;'>LADO CASCO</span>", unsafe_allow_html=True)
+                st.markdown(f"**Velocidade Real:** <span style='float:right;'>{result['it_geo']['v_casco_real']:.2f} m/s</span><br/>"
+                            f"**Perda de Carga Real:** <span style='float:right;'>{result['hidraulico']['DeltaP_casco']/1000:.2f} kPa</span><br/>"
+                            f"**Potência de Bombeamento:** <span style='float:right;'>{result['hidraulico']['P_casco']:.1f} W</span>", unsafe_allow_html=True)
+            
+            st.markdown("<br/>", unsafe_allow_html=True)
+            if result['status']['aceitavel']:
+                st.success(f"**Score Geral: {result['status']['score']} pontos** — O projeto atende a todos os critérios operacionais mínimos tolerados.")
+            else:
+                st.error(f"**Score Geral: {result['status']['score']} pontos** — Projeto requer atenção nos critérios abaixo.")
+            
+            st.markdown("<span style='font-size:0.8rem; font-weight:600; color:#64748b; text-transform:uppercase;'>RESULTADO DETALHADO DAS VERIFICAÇÕES OPERACIONAIS (CHECKS DE SCORE)</span>", unsafe_allow_html=True)
+            
+            val_cols = st.columns(2)
+            for i, v in enumerate(result['status']['validations']):
+                col = val_cols[i % 2]
+                with col:
+                    bg_color = "#ecfdf5" if v['passou'] else "#fef2f2"
+                    border_color = "#d1fae5" if v['passou'] else "#fee2e2"
+                    icon = "✅" if v['passou'] else "❌"
+                    text_color = "#10b981" if v['passou'] else "#ef4444"
+                    st.markdown(f"""
+                    <div style="background-color: {bg_color}; border: 1px solid {border_color}; border-radius: 8px; padding: 10px; margin-bottom: 10px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                            <span style="font-weight:600; font-size:0.9rem;">{icon} {v['nome']}</span>
+                            <span style="font-weight:700; font-size:0.85rem; color:{text_color};">{v['valor']}</span>
+                        </div>
+                        <div style="color: #64748b; font-size: 0.8rem; padding-left: 24px;">{v['impacto']}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+        with st.container(border=True):
+            st.markdown("#### 🕒 Previsão de Incrustação (Análise de Fouling)")
+            fc1, fc2 = st.columns(2)
+            
+            def render_fouling_card(title, data):
+                is_infinite = not data or data['R_f_critico'] <= 0 or math.isinf(data['tempo_campanha_meses']) or data['tempo_campanha_meses'] <= 0
+                bg_header = "#ecfdf5" if is_infinite else "#eff6ff"
+                text_header = "#047857" if is_infinite else "#1d4ed8"
+                badge_text = "Campanha Permanente" if is_infinite else f"{data['tempo_campanha_meses']:.1f} meses"
+                
+                html = f"""
+                <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; height: 100%;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 12px;">
+                        <span style="font-size: 0.75rem; font-weight: 700; color: #334155; text-transform: uppercase;">{title}</span>
+                        <span style="background-color: {bg_header}; color: {text_header}; padding: 2px 8px; border-radius: 9999px; font-size: 0.7rem; font-weight: 700; border: 1px solid {text_header}40;">{badge_text}</span>
+                    </div>
+                """
+                
+                if not data:
+                    html += """
+                    <div style="text-align: center; color: #94a3b8; font-size: 0.8rem; padding: 1rem; background-color: #f8fafc; border-radius: 8px; border: 1px dashed #e2e8f0;">
+                        Nenhuma temperatura limite especificada.
+                    </div>
+                    """
+                else:
+                    u_sujo_str = f"{data['U_sujo']:.1f}" if (data['U_sujo'] > 0 and not math.isinf(data['U_sujo'])) else '—'
+                    rf_crit_str = f"{data['R_f_critico']:.2e}" if data['R_f_critico'] > 0 else 'S/ Limite'
+                    taxa_str = f"{data['taxa']:.2e}"
+                    
+                    time_str = ""
+                    if is_infinite:
+                        time_str = "Estável (Fouling Crítico inalcançável)"
+                    else:
+                        parts = []
+                        d = data['decomposicao']
+                        if d['anos'] > 0: parts.append(f"{d['anos']} {'ano' if d['anos'] == 1 else 'anos'}")
+                        if d['meses'] > 0: parts.append(f"{d['meses']} {'mês' if d['meses'] == 1 else 'meses'}")
+                        if d['dias'] > 0: parts.append(f"{d['dias']} {'dia' if d['dias'] == 1 else 'dias'}")
+                        time_str = ", ".join(parts) if parts else "Menos de 1 dia"
+
+                    html += f"""
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+                        <div style="background: white; border: 1px solid #f1f5f9; padding: 8px; border-radius: 6px;">
+                            <span style="color: #94a3b8; font-size: 0.6rem; text-transform: uppercase; display: block; margin-bottom: 2px;">U Limpo</span>
+                            <span style="font-weight: 700; color: #1e293b;">{data['U_limpo']:.1f}</span> <span style="font-size: 0.65rem; color: #94a3b8;">W/m²K</span>
+                        </div>
+                        <div style="background: white; border: 1px solid #f1f5f9; padding: 8px; border-radius: 6px;">
+                            <span style="color: #94a3b8; font-size: 0.6rem; text-transform: uppercase; display: block; margin-bottom: 2px;">U Sujo Crítico</span>
+                            <span style="font-weight: 700; color: #1e293b;">{u_sujo_str}</span> <span style="font-size: 0.65rem; color: #94a3b8;">W/m²K</span>
+                        </div>
+                        <div style="background: white; border: 1px solid #f1f5f9; padding: 8px; border-radius: 6px;">
+                            <span style="color: #94a3b8; font-size: 0.6rem; text-transform: uppercase; display: block; margin-bottom: 2px;">Rf Crítico</span>
+                            <span style="font-weight: 700; color: #1e293b;">{rf_crit_str}</span> <span style="font-size: 0.65rem; color: #94a3b8;">m²K/W</span>
+                        </div>
+                        <div style="background: white; border: 1px solid #f1f5f9; padding: 8px; border-radius: 6px;">
+                            <span style="color: #94a3b8; font-size: 0.6rem; text-transform: uppercase; display: block; margin-bottom: 2px;">Taxa Depos.</span>
+                            <span style="font-weight: 700; color: #1e293b;">{taxa_str}</span> <span style="font-size: 0.65rem; color: #94a3b8;">m²K/(W·h)</span>
+                        </div>
+                    </div>
+                    """
+                    
+                    camp_bg = "#ecfdf5" if is_infinite else "#eff6ff"
+                    camp_text = "#065f46" if is_infinite else "#1e40af"
+                    camp_border = "#d1fae5" if is_infinite else "#dbeafe"
+                    
+                    html += f"""
+                    <div style="background-color: {camp_bg}; border: 1px solid {camp_border}; padding: 12px; border-radius: 6px;">
+                        <span style="color: #64748b; font-size: 0.65rem; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 4px;">Campanha Estimada</span>
+                        <div style="color: {camp_text}; font-weight: 700; font-size: 0.85rem;">{time_str}</div>
+                    </div>
+                    """
+                    
+                html += "</div>"
+                st.markdown(html, unsafe_allow_html=True)
+                
+            with fc1:
+                render_fouling_card("Lado Tubo (Fluido Interno)", result['fouling']['tubo'])
+            with fc2:
+                render_fouling_card("Lado Casco (Fluido Externo)", result['fouling']['casco'])
+
 else:
-    with col2:
-        st.info("Insira os parâmetros e clique em Simular para gerar o projeto otimizado.")
+    with col_res:
+        st.info("Insira os parâmetros na coluna à esquerda e clique em **Simular** para gerar o projeto otimizado.")
+
