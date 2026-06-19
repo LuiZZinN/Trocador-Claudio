@@ -808,19 +808,19 @@ if submitted or st.session_state.chosen_passes is not None:
                 badge_text = "Campanha Permanente" if is_infinite else f"{data['tempo_campanha_meses']:.1f} meses"
                 
                 html = f"""
-                <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; height: 100%;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 12px;">
-                        <span style="font-size: 0.75rem; font-weight: 700; color: #334155; text-transform: uppercase;">{title}</span>
-                        <span style="background-color: {bg_header}; color: {text_header}; padding: 2px 8px; border-radius: 9999px; font-size: 0.7rem; font-weight: 700; border: 1px solid {text_header}40;">{badge_text}</span>
-                    </div>
-                """
+<div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; height: 100%;">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 12px;">
+        <span style="font-size: 0.75rem; font-weight: 700; color: #334155; text-transform: uppercase;">{title}</span>
+        <span style="background-color: {bg_header}; color: {text_header}; padding: 2px 8px; border-radius: 9999px; font-size: 0.7rem; font-weight: 700; border: 1px solid {text_header}40;">{badge_text}</span>
+    </div>
+"""
                 
                 if not data:
                     html += """
-                    <div style="text-align: center; color: #94a3b8; font-size: 0.8rem; padding: 1rem; background-color: #f8fafc; border-radius: 8px; border: 1px dashed #e2e8f0;">
-                        Nenhuma temperatura limite especificada.
-                    </div>
-                    """
+<div style="text-align: center; color: #94a3b8; font-size: 0.8rem; padding: 1rem; background-color: #f8fafc; border-radius: 8px; border: 1px dashed #e2e8f0;">
+    Nenhuma temperatura limite especificada.
+</div>
+"""
                 else:
                     u_sujo_str = f"{data['U_sujo']:.1f}" if (data['U_sujo'] > 0 and not math.isinf(data['U_sujo'])) else '—'
                     rf_crit_str = f"{data['R_f_critico']:.2e}" if data['R_f_critico'] > 0 else 'S/ Limite'
@@ -838,36 +838,36 @@ if submitted or st.session_state.chosen_passes is not None:
                         time_str = ", ".join(parts) if parts else "Menos de 1 dia"
 
                     html += f"""
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
-                        <div style="background: white; border: 1px solid #f1f5f9; padding: 8px; border-radius: 6px;">
-                            <span style="color: #94a3b8; font-size: 0.6rem; text-transform: uppercase; display: block; margin-bottom: 2px;">U Limpo</span>
-                            <span style="font-weight: 700; color: #1e293b;">{data['U_limpo']:.1f}</span> <span style="font-size: 0.65rem; color: #94a3b8;">W/m²K</span>
-                        </div>
-                        <div style="background: white; border: 1px solid #f1f5f9; padding: 8px; border-radius: 6px;">
-                            <span style="color: #94a3b8; font-size: 0.6rem; text-transform: uppercase; display: block; margin-bottom: 2px;">U Sujo Crítico</span>
-                            <span style="font-weight: 700; color: #1e293b;">{u_sujo_str}</span> <span style="font-size: 0.65rem; color: #94a3b8;">W/m²K</span>
-                        </div>
-                        <div style="background: white; border: 1px solid #f1f5f9; padding: 8px; border-radius: 6px;">
-                            <span style="color: #94a3b8; font-size: 0.6rem; text-transform: uppercase; display: block; margin-bottom: 2px;">Rf Crítico</span>
-                            <span style="font-weight: 700; color: #1e293b;">{rf_crit_str}</span> <span style="font-size: 0.65rem; color: #94a3b8;">m²K/W</span>
-                        </div>
-                        <div style="background: white; border: 1px solid #f1f5f9; padding: 8px; border-radius: 6px;">
-                            <span style="color: #94a3b8; font-size: 0.6rem; text-transform: uppercase; display: block; margin-bottom: 2px;">Taxa Depos.</span>
-                            <span style="font-weight: 700; color: #1e293b;">{taxa_str}</span> <span style="font-size: 0.65rem; color: #94a3b8;">m²K/(W·h)</span>
-                        </div>
-                    </div>
-                    """
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+    <div style="background: white; border: 1px solid #f1f5f9; padding: 8px; border-radius: 6px;">
+        <span style="color: #94a3b8; font-size: 0.6rem; text-transform: uppercase; display: block; margin-bottom: 2px;">U Limpo</span>
+        <span style="font-weight: 700; color: #1e293b;">{data['U_limpo']:.1f}</span> <span style="font-size: 0.65rem; color: #94a3b8;">W/m²K</span>
+    </div>
+    <div style="background: white; border: 1px solid #f1f5f9; padding: 8px; border-radius: 6px;">
+        <span style="color: #94a3b8; font-size: 0.6rem; text-transform: uppercase; display: block; margin-bottom: 2px;">U Sujo Crítico</span>
+        <span style="font-weight: 700; color: #1e293b;">{u_sujo_str}</span> <span style="font-size: 0.65rem; color: #94a3b8;">W/m²K</span>
+    </div>
+    <div style="background: white; border: 1px solid #f1f5f9; padding: 8px; border-radius: 6px;">
+        <span style="color: #94a3b8; font-size: 0.6rem; text-transform: uppercase; display: block; margin-bottom: 2px;">Rf Crítico</span>
+        <span style="font-weight: 700; color: #1e293b;">{rf_crit_str}</span> <span style="font-size: 0.65rem; color: #94a3b8;">m²K/W</span>
+    </div>
+    <div style="background: white; border: 1px solid #f1f5f9; padding: 8px; border-radius: 6px;">
+        <span style="color: #94a3b8; font-size: 0.6rem; text-transform: uppercase; display: block; margin-bottom: 2px;">Taxa Depos.</span>
+        <span style="font-weight: 700; color: #1e293b;">{taxa_str}</span> <span style="font-size: 0.65rem; color: #94a3b8;">m²K/(W·h)</span>
+    </div>
+</div>
+"""
                     
                     camp_bg = "#ecfdf5" if is_infinite else "#eff6ff"
                     camp_text = "#065f46" if is_infinite else "#1e40af"
                     camp_border = "#d1fae5" if is_infinite else "#dbeafe"
                     
                     html += f"""
-                    <div style="background-color: {camp_bg}; border: 1px solid {camp_border}; padding: 12px; border-radius: 6px;">
-                        <span style="color: #64748b; font-size: 0.65rem; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 4px;">Campanha Estimada</span>
-                        <div style="color: {camp_text}; font-weight: 700; font-size: 0.85rem;">{time_str}</div>
-                    </div>
-                    """
+<div style="background-color: {camp_bg}; border: 1px solid {camp_border}; padding: 12px; border-radius: 6px;">
+    <span style="color: #64748b; font-size: 0.65rem; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 4px;">Campanha Estimada</span>
+    <div style="color: {camp_text}; font-weight: 700; font-size: 0.85rem;">{time_str}</div>
+</div>
+"""
                     
                 html += "</div>"
                 st.markdown(html, unsafe_allow_html=True)
