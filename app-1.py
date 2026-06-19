@@ -656,13 +656,16 @@ with col_form:
             
             st.divider()
             usaBellDelaware = st.checkbox("Usar Método Bell-Delaware", value=False)
+            
+            # Use smaller text for Bell-Delaware to ensure labels fit
             if usaBellDelaware:
+                st.markdown("<span style='font-size:0.8rem; font-weight:600; color:#64748b;'>Fatores Bell-Delaware:</span>", unsafe_allow_html=True)
                 b_cols = st.columns(5)
-                Jc = b_cols[0].number_input("Jc", value=0.85, step=0.01)
-                Jl = b_cols[1].number_input("Jl", value=0.80, step=0.01)
-                Jb = b_cols[2].number_input("Jb", value=0.80, step=0.01)
-                Js = b_cols[3].number_input("Js", value=0.90, step=0.01)
-                Jr = b_cols[4].number_input("Jr", value=0.95, step=0.01)
+                Jc = b_cols[0].number_input("Jc (Def.)", value=0.85, step=0.01, format="%.2f")
+                Jl = b_cols[1].number_input("Jl (Vaz.)", value=0.80, step=0.01, format="%.2f")
+                Jb = b_cols[2].number_input("Jb (Byp.)", value=0.80, step=0.01, format="%.2f")
+                Js = b_cols[3].number_input("Js (Esp.)", value=0.90, step=0.01, format="%.2f")
+                Jr = b_cols[4].number_input("Jr (Grd.)", value=0.95, step=0.01, format="%.2f")
             else:
                 Jc = 0.85; Jl = 0.80; Jb = 0.80; Js = 0.90; Jr = 0.95
                 
@@ -674,8 +677,12 @@ with col_form:
 
             submitted = st.form_submit_button("Simular", type="primary", use_container_width=True)
 
+if "simulated" not in st.session_state:
+    st.session_state.simulated = False
+
 if submitted:
     st.session_state.chosen_passes = None
+    st.session_state.simulated = True
 
 params = {
     "id_i": id_i, "id_e": id_e, "D_tubo_mm": D_tubo_mm, "espessura_mm": espessura_mm,
@@ -685,7 +692,7 @@ params = {
     "T_saida_min_tubo": T_saida_min_tubo, "T_saida_limite_casco": T_saida_limite_casco
 }
 
-if submitted or st.session_state.chosen_passes is not None:
+if st.session_state.simulated:
     result = runSimulation(params, st.session_state.chosen_passes)
     with col_res:
         
