@@ -621,8 +621,26 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+if "t_limite_tubo" not in st.session_state:
+    st.session_state.t_limite_tubo = 40.0
+if "t_limite_casco" not in st.session_state:
+    st.session_state.t_limite_casco = 35.0
+if "te_out_calc" not in st.session_state:
+    st.session_state.te_out_calc = None
+if "prev_ti_out" not in st.session_state:
+    st.session_state.prev_ti_out = 40.0
+if "simulated" not in st.session_state:
+    st.session_state.simulated = False
 if "chosen_passes" not in st.session_state:
     st.session_state.chosen_passes = None
+if "first_sim" not in st.session_state:
+    st.session_state.first_sim = True
+
+def update_tubo():
+    st.session_state.t_limite_tubo = st.session_state.t_lim_tubo_w
+
+def update_casco():
+    st.session_state.t_limite_casco = st.session_state.t_lim_casco_w
 
 col_form, col_res = st.columns([1, 2.5], gap="large")
 
@@ -638,8 +656,12 @@ with col_form:
         
         col1_c, col1_d = st.columns(2)
         Ti_in = col1_c.number_input("T. Ent Tubo (°C)", value=80.0)
-        Ti_out = col1_d.number_input("T. Sai Tubo (°C)", value=40.0)
         
+        Ti_out = col1_d.number_input("T. Sai Tubo (°C)", value=float(st.session_state.prev_ti_out), key="ti_out_widget")
+        if st.session_state.ti_out_widget != st.session_state.prev_ti_out:
+            st.session_state.t_limite_tubo = st.session_state.ti_out_widget
+            st.session_state.prev_ti_out = st.session_state.ti_out_widget
+            
         Te_in = st.number_input("T. Ent Casco (°C)", value=25.0)
         
         st.divider()
@@ -671,13 +693,17 @@ with col_form:
         st.divider()
         st.markdown("<span style='font-size:0.8rem; font-weight:600; color:#64748b; text-transform:uppercase;'>LIMITES PARA ANÁLISE DE FOULING</span>", unsafe_allow_html=True)
         col_f1, col_f2 = st.columns(2)
-        T_saida_min_tubo = col_f1.number_input("T. Limite Tubo (°C)", value=40.0, step=0.1)
-        T_saida_limite_casco = col_f2.number_input("T. Limite Casco (°C)", value=35.0, step=0.1)
+        
+        with col_f1:
+            st.markdown(f"<div style='font-size:11px; color:#64748b; margin-bottom:-10px; margin-top:5px; z-index:10; position:relative;'>Usar Spec: {Ti_out}°C</div>", unsafe_allow_html=True)
+            T_saida_min_tubo = st.number_input("T. Limite Tubo (°C)", value=float(st.session_state.t_limite_tubo), step=0.1, key="t_lim_tubo_w", on_change=update_tubo)
+            
+        with col_f2:
+            te_out_str = f"{st.session_state.te_out_calc:.1f}" if st.session_state.te_out_calc is not None else "--"
+            st.markdown(f"<div style='font-size:11px; color:#2563eb; font-weight:600; margin-bottom:-10px; margin-top:5px; z-index:10; position:relative;'>Usar Calc: {te_out_str}°C</div>", unsafe_allow_html=True)
+            T_saida_limite_casco = st.number_input("T. Limite Casco (°C)", value=float(st.session_state.t_limite_casco), step=0.1, key="t_lim_casco_w", on_change=update_casco)
 
         submitted = st.button("Simular", type="primary", use_container_width=True)
-
-if "simulated" not in st.session_state:
-    st.session_state.simulated = False
 
 if submitted:
     st.session_state.chosen_passes = None
@@ -688,11 +714,19 @@ params = {
     "L_tubo": L_tubo, "arranjo": arranjo, "id_mat": id_mat, "mdot_i_kgh": mdot_i_kgh,
     "mdot_e_kgh": mdot_e_kgh, "Ti_in": Ti_in, "Ti_out": Ti_out, "Te_in": Te_in,
     "usaBellDelaware": usaBellDelaware, "Jc": Jc, "Jl": Jl, "Jb": Jb, "Js": Js, "Jr": Jr,
-    "T_saida_min_tubo": T_saida_min_tubo, "T_saida_limite_casco": T_saida_limite_casco
+    "T_saida_min_tubo": st.session_state.t_limite_tubo, "T_saida_limite_casco": st.session_state.t_limite_casco
 }
 
 if st.session_state.simulated:
     result = runSimulation(params, st.session_state.chosen_passes)
+    
+    new_te = result['termico']['Te_out']
+    if st.session_state.te_out_calc != new_te:
+        st.session_state.te_out_calc = new_te
+        if st.session_state.first_sim or st.session_state.t_limite_casco == 35.0:
+            st.session_state.first_sim = False
+            st.session_state.t_limite_casco = float(f"{new_te:.1f}")
+            st.rerun()
     with col_res:
         
         c1, c2 = st.columns(2)
