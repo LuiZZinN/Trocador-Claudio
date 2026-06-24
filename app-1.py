@@ -149,8 +149,16 @@ def calcula_h_casco_Kern(D_casco, d_o, mdot, fluido, arranjo):
     return (Nu_s * fluido['k']) / D_hs
 
 def calcula_LMTD(Ti_in, Ti_out, Te_in, Te_out):
-    DT1 = abs(Ti_in - Te_out)
-    DT2 = abs(Ti_out - Te_in)
+    if Ti_in > Te_in:
+        DT1 = Ti_in - Te_out
+        DT2 = Ti_out - Te_in
+    else:
+        DT1 = Te_in - Ti_out
+        DT2 = Te_out - Ti_in
+
+    if DT1 <= 0 or DT2 <= 0:
+        return -1
+        
     if abs(DT1 - DT2) < 0.01:
         return DT1
     return (DT1 - DT2) / math.log(DT1 / DT2)
@@ -262,7 +270,15 @@ def runSimulation(params, chosenPasses=None):
         Qc = mdot_e * fluido_e['h_vap']
 
     DTlm = calcula_LMTD(Ti_in, Ti_out, Te_in, Te_out)
-    
+    if DTlm <= 0:
+        return {"error": "Inviável Termodinamicamente: as temperaturas fornecidas violam a 2ª Lei da Termodinâmica. O calor não pode fluir do meio frio para o quente sem realização de trabalho."}
+        
+    has_cross = False
+    if Ti_in > Te_in:
+        if Ti_out < Te_out: has_cross = True
+    elif Te_in > Ti_in:
+        if Te_out < Ti_out: has_cross = True
+
     R_val = (Ti_in - Ti_out) / (Te_out - Te_in) if (Te_out - Te_in) != 0 else 0
     S_val = (Te_out - Te_in) / (Ti_in - Te_in) if (Ti_in - Te_in) != 0 else 0
     DT1 = Ti_in - Te_out
@@ -489,11 +505,16 @@ def runSimulation(params, chosenPasses=None):
             Th_in_L, Th_out_L, Tc_in_L, Tc_out_L = Ti_in, T_saida_min_tubo, Te_in, Te_out_lim
         LMTD_lim = calcula_LMTD(Th_in_L, Th_out_L, Tc_in_L, Tc_out_L)
         
-        U_sujo = abs(Q_limite) / (active['A'] * active['F'] * LMTD_lim)
-        R_f_critico = (1 / U_sujo) - (1 / active['U'])
-        taxa = calcula_taxa_fouling(fluido_i, active['Re_t'], Tmed_i)
-        
-        tempo_campanha = R_f_critico / taxa if R_f_critico > 0 else 0
+        if LMTD_lim > 0:
+            U_sujo = abs(Q_limite) / (active['A'] * active['F'] * LMTD_lim)
+            R_f_critico = (1 / U_sujo) - (1 / active['U'])
+            taxa = calcula_taxa_fouling(fluido_i, active['Re_t'], Tmed_i)
+            tempo_campanha = R_f_critico / taxa if R_f_critico > 0 else 0
+        else:
+            U_sujo = 0
+            R_f_critico = -1
+            taxa = 0
+            tempo_campanha = 0
 
         fouling_tubo = {
             "U_limpo": active['U'],
@@ -518,11 +539,16 @@ def runSimulation(params, chosenPasses=None):
             Th_in_L, Th_out_L, Tc_in_L, Tc_out_L = Ti_in, Ti_out_lim, Te_in, T_saida_limite_casco
         LMTD_lim = calcula_LMTD(Th_in_L, Th_out_L, Tc_in_L, Tc_out_L)
         
-        U_sujo = abs(Q_limite) / (active['A'] * active['F'] * LMTD_lim)
-        R_f_critico = (1 / U_sujo) - (1 / active['U'])
-        taxa = calcula_taxa_fouling(fluido_e, active['Re_s'], Tmed_e)
-        
-        tempo_campanha = R_f_critico / taxa if R_f_critico > 0 else 0
+        if LMTD_lim > 0:
+            U_sujo = abs(Q_limite) / (active['A'] * active['F'] * LMTD_lim)
+            R_f_critico = (1 / U_sujo) - (1 / active['U'])
+            taxa = calcula_taxa_fouling(fluido_e, active['Re_s'], Tmed_e)
+            tempo_campanha = R_f_critico / taxa if R_f_critico > 0 else 0
+        else:
+            U_sujo = 0
+            R_f_critico = -1
+            taxa = 0
+            tempo_campanha = 0
 
         fouling_casco = {
             "U_limpo": active['U'],
@@ -542,6 +568,7 @@ def runSimulation(params, chosenPasses=None):
             "F": active['F'],
             "configuracao": active['config'],
             "n_passes": active['n_passes'],
+            "has_cross": has_cross,
         },
         "envelope": {
             "U_min": h_i_min,
@@ -720,6 +747,11 @@ params = {
 if st.session_state.simulated:
     result = runSimulation(params, st.session_state.chosen_passes)
     
+    if "error" in result:
+        with col_res:
+            st.error(f"❌ **Erro de Simulação:**\n\n{result['error']}")
+        st.stop()
+        
     new_te = result['termico']['Te_out']
     if st.session_state.te_out_calc != new_te:
         st.session_state.te_out_calc = new_te
@@ -729,6 +761,9 @@ if st.session_state.simulated:
             st.rerun()
     with col_res:
         
+        if result['termico'].get('has_cross'):
+            st.warning("⚠️ **Aviso de Temperature Cross (Cruzamento de Temperaturas):** A temperatura de saída do fluido frio é maior que a de saída do fluido quente. Apenas sistemas puramente contracorrente ou múltiplos cascos em série podem operar eficientemente nestas condições.")
+
         c1, c2 = st.columns(2)
         with c1:
             with st.container(border=True):
