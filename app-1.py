@@ -228,6 +228,7 @@ def runSimulation(params, chosenPasses=None):
     Jr = params['Jr']
     T_saida_min_tubo = params.get('T_saida_min_tubo')
     T_saida_limite_casco = params.get('T_saida_limite_casco')
+    N_cascos = params.get('N_cascos', 1)
 
     fluido_i_base = next(f for f in Fluidos if f['id'] == id_i)
     fluido_e_base = next(f for f in Fluidos if f['id'] == id_e)
@@ -284,11 +285,25 @@ def runSimulation(params, chosenPasses=None):
     DT1 = Ti_in - Te_out
     DT2 = Ti_out - Te_in
 
+    P_N = S_val
+    if N_cascos > 1 and S_val > 0 and S_val < 1:
+        if abs(R_val - 1.0) < 1e-5:
+            P_N = S_val / (N_cascos - S_val * (N_cascos - 1))
+        else:
+            try:
+                base = (1 - S_val * R_val) / (1 - S_val)
+                if base > 0:
+                    W = base ** (1 / N_cascos)
+                    if W != R_val:
+                        P_N = (W - 1) / (W - R_val)
+            except Exception:
+                P_N = S_val
+
     F_base = -1
-    if R_val > 0 and S_val > 0 and S_val < 1 and R_val * S_val < 1:
+    if R_val > 0 and P_N > 0 and P_N < 1 and R_val * P_N < 1:
         raiz = math.sqrt(R_val * R_val + 1)
-        termo1 = (1 - S_val) / (1 - R_val * S_val)
-        termo2 = (2 - S_val * (R_val + 1 - raiz)) / (2 - S_val * (R_val + 1 + raiz))
+        termo1 = (1 - P_N) / (1 - R_val * P_N)
+        termo2 = (2 - P_N * (R_val + 1 - raiz)) / (2 - P_N * (R_val + 1 + raiz))
 
         if termo1 > 0 and termo2 > 0:
             num = raiz * math.log(termo1)
@@ -333,7 +348,7 @@ def runSimulation(params, chosenPasses=None):
 
     def simulaConfig(p_passes, p_F, p_config):
         nonlocal Nt_min, mdot_i, mdot_e, Qt, DTlm, D_o, L_tubo, fluido_i, fluido_e, Ti_in, Ti_out, Te_in, Te_out
-        D_casco_min = calcula_Ds_selba(Nt_min, Pt, arranjo, p_passes)
+        D_casco_min = calcula_Ds_selba(math.ceil(Nt_min / N_cascos), Pt, arranjo, p_passes)
         h_e_min = calcula_h_casco_Kern(D_casco_min, D_o, mdot_e, fluido_e, arranjo) * J_total
 
         U_est = 1 / (1 / h_i_min + 1 / h_e_min + R_parede)
@@ -348,9 +363,11 @@ def runSimulation(params, chosenPasses=None):
 
         while erro > 0.05 and iter_num < 50:
             iter_num += 1
-            D_casco_curr = calcula_Ds_selba(Nt_curr, Pt, arranjo, p_passes)
+            Nt_por_casco = math.ceil(Nt_curr / N_cascos)
+            if Nt_por_casco < 1: Nt_por_casco = 1
+            D_casco_curr = calcula_Ds_selba(Nt_por_casco, Pt, arranjo, p_passes)
             
-            A_fluxo_curr_tubos = Nt_curr * A_fluxo_tubo / p_passes
+            A_fluxo_curr_tubos = Nt_por_casco * A_fluxo_tubo / p_passes
             v_tubo_curr = mdot_i / (fluido_i['rho'] * A_fluxo_curr_tubos)
 
             B_val = 0.25 * D_casco_curr
@@ -374,7 +391,7 @@ def runSimulation(params, chosenPasses=None):
                 else:
                     Nt_curr = Nt_novo
 
-        L_eq = p_passes * L_tubo
+        L_eq = p_passes * L_tubo * N_cascos
         Re_t = (fluido_i['rho'] * v_tubo_curr * D_tubo) / fluido_i['mu']
         f_t = 64 / Re_t if Re_t < 2100 else 0.316 * (Re_t**-0.25)
         DeltaP_tubo = f_t * (L_eq / D_tubo) * (fluido_i['rho'] * (v_tubo_curr**2) / 2)
@@ -386,7 +403,7 @@ def runSimulation(params, chosenPasses=None):
         D_hs = 4 * ((Pt**2) - (math.pi * (D_o**2) / 4)) / (math.pi * D_o)
         Re_s = (D_hs * Gs) / fluido_e['mu']
         f_s = 1 if Re_s < 100 else 0.14 * (Re_s**-0.2)
-        DeltaP_casco = f_s * ((Gs**2) / (2 * fluido_e['rho'])) * (D_casco_curr / D_hs) * Nb
+        DeltaP_casco = f_s * ((Gs**2) / (2 * fluido_e['rho'])) * (D_casco_curr / D_hs) * Nb * N_cascos
 
         P_tubo = (mdot_i / fluido_i['rho']) * DeltaP_tubo
         P_casco = (mdot_e / fluido_e['rho']) * DeltaP_casco
@@ -703,6 +720,10 @@ with col_form:
         arranjo = col1_h.selectbox("Arranjo", options=[1, 2], format_func=lambda x: "Triangular (1)" if x == 1 else "Quadrado (2)")
         
         st.divider()
+        st.markdown("<div style='font-size:14px; margin-bottom:5px; color:#1e293b; font-weight:600;'>Múltiplos Cascos em Série <span style='float:right; font-size:11px; font-weight:500; color:#4f46e5; background:#e0e7ff; padding:2px 8px; border-radius:12px;'>Evita Pinch/Cruzamento</span></div>", unsafe_allow_html=True)
+        N_cascos = st.selectbox("Múltiplos Cascos em Série", options=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10], index=0, format_func=lambda x: f"{x} Casco (Padrão)" if x == 1 else f"{x} Cascos em Série", label_visibility="collapsed")
+        
+        st.divider()
         usaBellDelaware = st.checkbox("Usar Método Bell-Delaware", value=False)
         
         # Use smaller text for Bell-Delaware to ensure labels fit
@@ -741,7 +762,8 @@ params = {
     "L_tubo": L_tubo, "arranjo": arranjo, "id_mat": id_mat, "mdot_i_kgh": mdot_i_kgh,
     "mdot_e_kgh": mdot_e_kgh, "Ti_in": Ti_in, "Ti_out": Ti_out, "Te_in": Te_in,
     "usaBellDelaware": usaBellDelaware, "Jc": Jc, "Jl": Jl, "Jb": Jb, "Js": Js, "Jr": Jr,
-    "T_saida_min_tubo": st.session_state.t_limite_tubo, "T_saida_limite_casco": st.session_state.t_limite_casco
+    "T_saida_min_tubo": st.session_state.t_limite_tubo, "T_saida_limite_casco": st.session_state.t_limite_casco,
+    "N_cascos": N_cascos
 }
 
 if st.session_state.simulated:
@@ -829,6 +851,15 @@ if st.session_state.simulated:
                             st.session_state.chosen_passes = alt['n_passes']
                             st.rerun()
                 st.divider()
+
+            if len(result['alternativas']) == 1 and result['alternativas'][0]['n_passes'] == 1:
+                st.warning("""
+**Apenas 1 alternativa viável (1-1 Contracorrente)**
+
+Isso ocorre porque há um **cruzamento de temperaturas** (a temperatura de saída do fluido frio é maior ou muito próxima da de saída do fluido quente) ou as condições operacionais impedem termodinamicamente o funcionamento de múltiplos passes no tubo (como 1-2 ou 1-4). Configurações com múltiplos passes possuem trechos em co-corrente, sofrendo de "pinch" térmico (fator de correção F indefinido ou menor que zero). Apenas o arranjo em contracorrente pura (1-1) é viável nestas condições.
+
+💡 **Solução recomendada:** Tente aumentar o parâmetro "Múltiplos Cascos em Série" para 2 ou mais cascos no menu lateral. Isso particiona a carga de temperatura do trocador, eliminando o cruzamento interno em cada casco e viabilizando arranjos mais eficientes com múltiplos passes (como 2-4 ou 3-6) com elevados fatores F!
+""")
         
         with st.container(border=True):
             st.markdown("#### 📈 Avaliação Hidrodinâmica")
